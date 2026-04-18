@@ -14,6 +14,10 @@ import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
+import android.widget.Toast
+import com.example.safewalk.data.model.User
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 class ProfileFragment : Fragment() {
@@ -21,6 +25,8 @@ class ProfileFragment : Fragment() {
     private var _binding: FragmentProfileBinding? = null
     private val binding get() = _binding!!
     private lateinit var auth: FirebaseAuth
+    private lateinit var db: FirebaseFirestore
+    private var userListener: com.google.firebase.firestore.ListenerRegistration? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -29,12 +35,16 @@ class ProfileFragment : Fragment() {
     ): View {
         _binding = FragmentProfileBinding.inflate(inflater, container, false)
         auth = Firebase.auth
+        db = Firebase.firestore
         return binding.root
     }
+
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         displayUserInfo()
+        fetchUserStats()
+        setupListeners()
         setupLogout()
     }
 
@@ -45,7 +55,7 @@ class ProfileFragment : Fragment() {
             binding.profileEmail.text = it.email
             
             val initials = if (!it.displayName.isNullOrEmpty()) {
-                it.displayName!!.split(" ").mapNotNull { name -> name.take(1) }.take(2).joinToString("").uppercase()
+                it.displayName!!.split(" ").filter { s -> s.isNotEmpty() }.map { name -> name.take(1) }.take(2).joinToString("").uppercase()
             } else "SW"
             binding.profileInitials.text = initials
 
@@ -60,6 +70,54 @@ class ProfileFragment : Fragment() {
             }
         }
     }
+
+    private fun fetchUserStats() {
+        val uid = auth.currentUser?.uid ?: return
+        userListener = db.collection("users").document(uid).addSnapshotListener { snapshot, e ->
+            if (e != null) return@addSnapshotListener
+            if (_binding != null && snapshot != null && snapshot.exists()) {
+                val user = snapshot.toObject(User::class.java)
+                user?.let {
+                    binding.guardianCount.text = it.guardianCount.toString()
+                    binding.reportCount.text = it.reportCount.toString()
+                    binding.guardianModeToggleProfile.isChecked = it.isGuardianMode
+                }
+            }
+        }
+    }
+
+
+    private fun setupListeners() {
+        binding.guardianModeToggleProfile.setOnCheckedChangeListener { _, isChecked ->
+            updateGuardianMode(isChecked)
+        }
+
+        binding.rowGuardians.setOnClickListener {
+            val sheet = com.example.safewalk.ui.dialogs.GuardianSheet()
+            sheet.show(parentFragmentManager, "GUARDIAN_SHEET")
+        }
+
+        binding.rowReports.setOnClickListener {
+            // TODO: Navigate to My Reports list
+            Toast.makeText(context, "Coming Soon: My Incident Reports", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.rowNotifications.setOnClickListener {
+            Toast.makeText(context, "Coming Soon: Notifications History", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+
+    private fun updateGuardianMode(enabled: Boolean) {
+        val uid = auth.currentUser?.uid ?: return
+        db.collection("users").document(uid).update("isGuardianMode", enabled)
+            .addOnFailureListener {
+                if (_binding != null) {
+                    Toast.makeText(requireContext(), "Failed to update Guardian Mode", Toast.LENGTH_SHORT).show()
+                }
+            }
+    }
+
 
     private fun setupLogout() {
         binding.logoutButton.setOnClickListener {
@@ -87,6 +145,8 @@ class ProfileFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        userListener?.remove()
         _binding = null
     }
+
 }

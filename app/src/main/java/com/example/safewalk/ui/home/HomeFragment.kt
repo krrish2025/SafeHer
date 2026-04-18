@@ -14,10 +14,21 @@ import com.example.safewalk.databinding.FragmentHomeBinding
 import com.example.safewalk.ui.dialogs.GuardianSheet
 import com.example.safewalk.ui.dialogs.SOSDialog
 
+import android.widget.Toast
+import com.example.safewalk.data.model.User
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
+    private lateinit var auth: FirebaseAuth
+    private lateinit var db: FirebaseFirestore
+    private var userListener: com.google.firebase.firestore.ListenerRegistration? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -25,6 +36,8 @@ class HomeFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        auth = Firebase.auth
+        db = Firebase.firestore
         return binding.root
     }
 
@@ -33,12 +46,28 @@ class HomeFragment : Fragment() {
         
         startPulseAnimation()
         setupListeners()
+        syncGuardianMode()
+    }
+
+    private fun syncGuardianMode() {
+        val uid = auth.currentUser?.uid ?: return
+        userListener = db.collection("users").document(uid).addSnapshotListener { snapshot, e ->
+            if (e != null) return@addSnapshotListener
+            if (_binding != null && snapshot != null && snapshot.exists()) {
+                val user = snapshot.toObject(User::class.java)
+                user?.let {
+                    binding.guardianModeToggle.isChecked = it.isGuardianMode
+                }
+            }
+        }
     }
 
     private fun startPulseAnimation() {
         val pulse = android.view.animation.AnimationUtils.loadAnimation(requireContext(), R.anim.pulse)
         binding.pulseRing.startAnimation(pulse)
     }
+
+
 
     private val handler = Handler(Looper.getMainLooper())
     private var progress = 0
@@ -47,6 +76,7 @@ class HomeFragment : Fragment() {
 
     private val progressRunnable = object : Runnable {
         override fun run() {
+            if (_binding == null) return
             progress += (interval * 100 / totalTime).toInt()
             if (progress >= 100) {
                 binding.sosProgress.progress = 100
@@ -58,7 +88,10 @@ class HomeFragment : Fragment() {
         }
     }
 
+
+
     private fun setupListeners() {
+        requestPermissionsIfNeeded()
         binding.sosButton.setOnTouchListener { v, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -93,7 +126,33 @@ class HomeFragment : Fragment() {
         }
 
         binding.guardianModeToggle.setOnCheckedChangeListener { _, isChecked ->
-            // Handle toggle logic
+            updateGuardianMode(isChecked)
+        }
+    }
+
+    private fun updateGuardianMode(enabled: Boolean) {
+        val uid = auth.currentUser?.uid ?: return
+        db.collection("users").document(uid).update("isGuardianMode", enabled)
+            .addOnFailureListener {
+                if (_binding != null) {
+                    Toast.makeText(context, "Failed to update Guardian Mode", Toast.LENGTH_SHORT).show()
+                }
+            }
+    }
+
+    private fun requestPermissionsIfNeeded() {
+        val permissions = mutableListOf(
+            android.Manifest.permission.ACCESS_FINE_LOCATION,
+            android.Manifest.permission.SEND_SMS,
+            android.Manifest.permission.READ_CONTACTS
+        )
+        
+        val permissionsToRequest = permissions.filter {
+            androidx.core.content.ContextCompat.checkSelfPermission(requireContext(), it) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        }
+
+        if (permissionsToRequest.isNotEmpty()) {
+            requestPermissions(permissionsToRequest.toTypedArray(), 1001)
         }
     }
 
@@ -111,6 +170,8 @@ class HomeFragment : Fragment() {
         // Optional: hide after a delay or just leave at 0
     }
 
+
+
     private fun triggerSOS() {
         stopSOSCounter()
         val dialog = SOSDialog()
@@ -119,6 +180,8 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        userListener?.remove()
         _binding = null
     }
+
 }

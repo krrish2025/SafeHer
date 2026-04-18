@@ -1,11 +1,18 @@
 package com.example.safewalk.ui.dialogs
 
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import com.example.safewalk.R
 import com.example.safewalk.databinding.BottomSheetGuardianBinding
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -22,6 +29,25 @@ class GuardianSheet : BottomSheetDialogFragment() {
     
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            openContactPicker()
+        } else {
+            Toast.makeText(requireContext(), "Permission denied to read contacts", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val pickContactLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val contactUri = result.data?.data ?: return@registerForActivityResult
+            processContact(contactUri)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,7 +76,47 @@ class GuardianSheet : BottomSheetDialogFragment() {
         binding.dismissButton.setOnClickListener {
             dismiss()
         }
+
+        binding.btnPickContact.setOnClickListener {
+            checkContactsPermission()
+        }
     }
+
+    private fun checkContactsPermission() {
+        when {
+            ContextCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.READ_CONTACTS
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                openContactPicker()
+            }
+            else -> {
+                requestPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+            }
+        }
+    }
+
+    private fun openContactPicker() {
+        val intent = Intent(Intent.ACTION_PICK, ContactsContract.CommonDataKinds.Phone.CONTENT_URI)
+        pickContactLauncher.launch(intent)
+    }
+
+    private fun processContact(contactUri: android.net.Uri) {
+        val cursor = requireContext().contentResolver.query(contactUri, null, null, null, null)
+        cursor?.use {
+            if (it.moveToFirst()) {
+                val nameIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                val phoneIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                
+                val name = it.getString(nameIndex)
+                val phone = it.getString(phoneIndex)
+                
+                binding.guardianNameInput.setText(name)
+                binding.guardianPhoneInput.setText(phone)
+            }
+        }
+    }
+
 
     private fun saveGuardian() {
         val name = binding.guardianNameInput.text.toString().trim()
@@ -76,16 +142,21 @@ class GuardianSheet : BottomSheetDialogFragment() {
                 .collection("guardians")
                 .add(guardian)
                 .addOnSuccessListener {
-                    binding.addGuardianButton.isEnabled = true
-                    binding.addGuardianButton.text = "Add Guardian"
-                    binding.guardianNameInput.text?.clear()
-                    binding.guardianPhoneInput.text?.clear()
-                    loadGuardians()
+                    if (isAdded) {
+                        binding.addGuardianButton.isEnabled = true
+                        binding.addGuardianButton.text = "Add Guardian"
+                        binding.guardianNameInput.text?.clear()
+                        binding.guardianPhoneInput.setText("")
+                        loadGuardians()
+                        Toast.makeText(requireContext(), "Guardian added successfully", Toast.LENGTH_SHORT).show()
+                    }
                 }
-                .addOnFailureListener {
-                    binding.addGuardianButton.isEnabled = true
-                    binding.addGuardianButton.text = "Add Guardian"
-                    Toast.makeText(requireContext(), "Error saving", Toast.LENGTH_SHORT).show()
+                .addOnFailureListener { e ->
+                    if (isAdded) {
+                        binding.addGuardianButton.isEnabled = true
+                        binding.addGuardianButton.text = "Add Guardian"
+                        Toast.makeText(requireContext(), "Error saving: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
                 }
         }
     }
@@ -98,12 +169,24 @@ class GuardianSheet : BottomSheetDialogFragment() {
             .orderBy("timestamp")
             .get()
             .addOnSuccessListener { result ->
-                binding.guardianList.removeAllViews()
-                for (document in result) {
-                    val name = document.getString("name") ?: ""
-                    val phone = document.getString("phone") ?: ""
-                    addGuardianView(name, phone)
+                if (_binding != null) {
+                    binding.guardianList.removeAllViews()
+                    for (document in result) {
+                        val name = document.getString("name") ?: ""
+                        val phone = document.getString("phone") ?: ""
+                        addGuardianView(name, phone)
+                    }
+                    updateGuardianCount(result.size().toInt())
                 }
+            }
+    }
+
+    private fun updateGuardianCount(count: Int) {
+        val userId = auth.currentUser?.uid ?: return
+        db.collection("users").document(userId)
+            .update("guardianCount", count)
+            .addOnFailureListener { e ->
+                android.util.Log.e("GuardianSheet", "Failed to update count", e)
             }
     }
 

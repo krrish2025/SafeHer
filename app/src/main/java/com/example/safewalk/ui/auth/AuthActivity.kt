@@ -91,21 +91,26 @@ class AuthActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     if (user != null) {
-                        // Prepare user data for Firestore
-                        val userMap = hashMapOf(
-                            "name" to (user.displayName ?: ""),
-                            "email" to (user.email ?: ""),
-                            "uid" to user.uid,
-                            "photoUrl" to (user.photoUrl?.toString() ?: ""),
-                            "lastLogin" to com.google.firebase.Timestamp.now()
-                        )
-                        
-                        // Start saving to Firestore in background, DO NOT wait for it
-                        db.collection("users").document(user.uid)
-                            .set(userMap, com.google.firebase.firestore.SetOptions.merge())
-                            .addOnFailureListener { e ->
-                                android.util.Log.e("AuthActivity", "Firestore update failed", e)
-                            }
+                        // Get FCM Token
+                        com.google.firebase.messaging.FirebaseMessaging.getInstance().token.addOnCompleteListener { tokenTask ->
+                            val fcmToken = if (tokenTask.isSuccessful) tokenTask.result else ""
+                            
+                            // Prepare user data for Firestore
+                            val userMap = hashMapOf(
+                                "name" to (user.displayName ?: ""),
+                                "email" to (user.email ?: ""),
+                                "uid" to user.uid,
+                                "fcmToken" to fcmToken,
+                                "photoUrl" to (user.photoUrl?.toString() ?: ""),
+                                "lastLogin" to com.google.firebase.Timestamp.now(),
+                                "isGuardianMode" to false,
+                                "guardianCount" to 0,
+                                "reportCount" to 0
+                            )
+                            
+                            db.collection("users").document(user.uid)
+                                .set(userMap, com.google.firebase.firestore.SetOptions.merge())
+                        }
                     }
                     
                     // NAVIGATE IMMEDIATELY on successful auth
@@ -221,7 +226,10 @@ class AuthActivity : AppCompatActivity() {
                         "name" to name,
                         "phone" to phone,
                         "email" to email,
-                        "uid" to userId
+                        "uid" to userId,
+                        "isGuardianMode" to false,
+                        "guardianCount" to 0,
+                        "reportCount" to 0
                     )
 
                     if (userId != null) {

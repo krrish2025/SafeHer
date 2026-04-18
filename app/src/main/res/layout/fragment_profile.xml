@@ -1,24 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/surface"
-    android:orientation="vertical"
-    android:padding="20dp">
+    android:background="@color/surface">
 
-    <!-- Profile Hero -->
+    <!-- PROFILE SECTION -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/profileSection"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:gravity="center"
         android:orientation="vertical"
-        android:paddingVertical="20dp">
+        android:gravity="center"
+        android:paddingTop="32dp"
+        android:paddingBottom="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <FrameLayout
-            android:layout_width="56dp"
-            android:layout_height="56dp">
+            android:layout_width="72dp"
+            android:layout_height="72dp">
 
             <ImageView
                 android:id="@+id/profileImage"
@@ -26,7 +28,7 @@
                 android:layout_height="match_parent"
                 android:background="@drawable/bg_avatar_large"
                 android:scaleType="centerCrop"
-                android:clipToOutline="true"/>
+                android:clipToOutline="true" />
 
             <TextView
                 android:id="@+id/profileInitials"
@@ -34,8 +36,8 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="RS"
-                android:textColor="@color/white"
-                android:textSize="18sp"
+                android:textColor="@android:color/white"
+                android:textSize="20sp"
                 android:textStyle="bold" />
         </FrameLayout>
 
@@ -43,10 +45,10 @@
             android:id="@+id/profileName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="12dp"
             android:text="Riya Sharma"
             android:textColor="@color/text"
-            android:textSize="14sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <TextView
@@ -55,21 +57,33 @@
             android:layout_height="wrap_content"
             android:text="riya@example.com"
             android:textColor="@color/sub"
-            android:textSize="9sp" />
+            android:textSize="12sp" />
+
     </LinearLayout>
 
-    <!-- Settings List -->
+    <!-- SETTINGS CARD -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:id="@+id/settingsCard"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:orientation="vertical"
         android:background="@drawable/bg_panel_rounded_14"
-        android:orientation="vertical">
+        android:paddingVertical="8dp"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/profileSection"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
         <!-- Trusted Contacts -->
-        <LinearLayout style="@style/ProfileRow">
+        <LinearLayout
+            android:id="@+id/rowGuardians"
+            style="@style/ProfileRow"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
             <TextView style="@style/ProfileRowLabel" android:text="Trusted Contacts" />
-            <TextView style="@style/ProfileBadge" android:text="3" />
+            <TextView android:id="@+id/guardianCount" style="@style/ProfileBadge" android:text="0" />
             <TextView style="@style/ProfileChevron" android:text="›" />
         </LinearLayout>
 
@@ -79,6 +93,7 @@
         <LinearLayout style="@style/ProfileRow">
             <TextView style="@style/ProfileRowLabel" android:text="Guardian Mode" />
             <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/guardianModeToggleProfile"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:thumb="@drawable/switch_thumb"
@@ -88,46 +103,48 @@
         <View style="@style/ProfileDivider" />
 
         <!-- My Reports -->
-        <LinearLayout style="@style/ProfileRow">
+        <LinearLayout
+            android:id="@+id/rowReports"
+            style="@style/ProfileRow"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
             <TextView style="@style/ProfileRowLabel" android:text="My Reports" />
-            <TextView style="@style/ProfileBadge" android:text="7" />
+            <TextView android:id="@+id/reportCount" style="@style/ProfileBadge" android:text="0" />
             <TextView style="@style/ProfileChevron" android:text="›" />
         </LinearLayout>
 
         <View style="@style/ProfileDivider" />
 
         <!-- Notifications -->
-        <LinearLayout style="@style/ProfileRow">
+        <LinearLayout
+            android:id="@+id/rowNotifications"
+            style="@style/ProfileRow"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
             <TextView style="@style/ProfileRowLabel" android:text="Notifications" />
             <TextView style="@style/ProfileChevron" android:text="›" />
         </LinearLayout>
 
-        <View style="@style/ProfileDivider" />
-
-        <!-- Privacy & Permissions -->
-        <LinearLayout style="@style/ProfileRow">
-            <TextView style="@style/ProfileRowLabel" android:text="Privacy &amp; Permissions" />
-            <TextView style="@style/ProfileChevron" android:text="›" />
-        </LinearLayout>
     </LinearLayout>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-    <!-- Log Out Button -->
-    <Button
+    <!-- LOGOUT BUTTON -->
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/logoutButton"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:backgroundTint="@color/panel"
         android:text="Log Out"
         android:textAllCaps="false"
-        android:textColor="@color/ember"
         android:textStyle="bold"
-        app:cornerRadius="10dp"
+        android:textColor="@color/ember"
+        android:layout_margin="16dp"
+        app:backgroundTint="@color/panel"
+        app:cornerRadius="12dp"
         app:strokeColor="@color/ember"
-        app:strokeWidth="1dp" />
+        app:strokeWidth="1dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
