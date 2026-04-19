@@ -215,14 +215,14 @@
                 android:textSize="13sp" />
         </LinearLayout>
 
-        <!-- SUBMIT BUTTON -->
+        <!-- PREVIEW BUTTON -->
         <Button
             android:id="@+id/submitButton"
             android:layout_width="match_parent"
             android:layout_height="56dp"
             android:layout_marginTop="28dp"
             android:backgroundTint="@color/ember"
-            android:text="Submit Report →"
+            android:text="Preview Report →"
             android:textAllCaps="false"
             android:textColor="@color/white"
             android:textSize="15sp"
