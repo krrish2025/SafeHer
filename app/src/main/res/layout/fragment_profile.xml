@@ -103,11 +103,11 @@
 
         <View style="@style/ProfileDivider" />
 
-        <!-- Guardian Mode -->
+        <!-- Community Member Mode -->
         <LinearLayout style="@style/ProfileRow">
-            <TextView style="@style/ProfileRowLabel" android:text="Guardian Mode" />
+            <TextView style="@style/ProfileRowLabel" android:text="Community Hero Mode" />
             <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/guardianModeToggleProfile"
+                android:id="@+id/communityModeToggle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:thumb="@drawable/switch_thumb"

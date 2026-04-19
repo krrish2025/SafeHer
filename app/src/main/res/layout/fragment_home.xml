@@ -54,64 +54,14 @@
                 android:background="@drawable/bg_avatar" />
         </LinearLayout>
 
-        <!-- Guardian Mode Toggle -->
-        <LinearLayout
-            android:id="@+id/guardianContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="4dp"
-            android:background="@drawable/bg_panel_rounded"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Shield"
-                android:textSize="20sp" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Guardian Mode"
-                    android:textColor="@color/text"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Real-time location sharing"
-                    android:textColor="@color/sub"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/guardianModeToggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:thumb="@drawable/switch_thumb"
-                app:track="@drawable/switch_track"
-                android:checked="true"/>
-        </LinearLayout>
-
         <!-- SOS Zone -->
         <LinearLayout
             android:id="@+id/sosZone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:layout_marginTop="24dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="32dp"
             android:orientation="vertical">
 
             <FrameLayout

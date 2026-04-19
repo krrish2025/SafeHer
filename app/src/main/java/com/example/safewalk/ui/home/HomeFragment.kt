@@ -8,14 +8,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.navigation.fragment.findNavController
 import com.example.safewalk.R
 import com.example.safewalk.databinding.FragmentHomeBinding
 import com.example.safewalk.ui.dialogs.GuardianSheet
 import com.example.safewalk.ui.dialogs.SOSDialog
 
 import android.widget.Toast
-import com.example.safewalk.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -46,7 +44,6 @@ class HomeFragment : Fragment() {
         
         startPulseAnimation()
         setupListeners()
-        syncGuardianMode()
         checkUserPhone()
     }
 
@@ -94,19 +91,6 @@ class HomeFragment : Fragment() {
                 Toast.makeText(requireContext(), "Failed to update phone", Toast.LENGTH_SHORT).show()
                 showPhoneInputDialog()
             }
-    }
-
-    private fun syncGuardianMode() {
-        val uid = auth.currentUser?.uid ?: return
-        userListener = db.collection("users").document(uid).addSnapshotListener { snapshot, e ->
-            if (e != null) return@addSnapshotListener
-            if (_binding != null && snapshot != null && snapshot.exists()) {
-                val user = snapshot.toObject(User::class.java)
-                user?.let {
-                    binding.guardianModeToggle.isChecked = it.isGuardianMode
-                }
-            }
-        }
     }
 
     private fun startPulseAnimation() {
@@ -169,22 +153,8 @@ class HomeFragment : Fragment() {
         }
 
         binding.actionAlerts.setOnClickListener {
-            // Handle Alerts click (e.g., navigate to notification history)
+            Toast.makeText(context, "Coming Soon: Recent Alerts", Toast.LENGTH_SHORT).show()
         }
-
-        binding.guardianModeToggle.setOnCheckedChangeListener { _, isChecked ->
-            updateGuardianMode(isChecked)
-        }
-    }
-
-    private fun updateGuardianMode(enabled: Boolean) {
-        val uid = auth.currentUser?.uid ?: return
-        db.collection("users").document(uid).update("isGuardianMode", enabled)
-            .addOnFailureListener {
-                if (_binding != null) {
-                    Toast.makeText(context, "Failed to update Guardian Mode", Toast.LENGTH_SHORT).show()
-                }
-            }
     }
 
     private fun requestPermissionsIfNeeded() {
@@ -214,7 +184,6 @@ class HomeFragment : Fragment() {
         handler.removeCallbacks(progressRunnable)
         progress = 0
         binding.sosProgress.progress = 0
-        // Optional: hide after a delay or just leave at 0
     }
 
 

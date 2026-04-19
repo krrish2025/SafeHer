@@ -71,6 +71,7 @@ class SOSDialog : DialogFragment() {
         }
 
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            val userName = auth.currentUser?.displayName ?: "A contact"
             val locationUrl = if (location != null) {
                 "https://www.google.com/maps/search/?api=1&query=${location.latitude},${location.longitude}"
             } else {
@@ -78,8 +79,48 @@ class SOSDialog : DialogFragment() {
             }
             
             sendAlertsToGuardians(locationUrl)
+            
+            if (location != null) {
+                alertNearbyCommunity(location, userName, locationUrl)
+            }
+            
             notifyPoliceStation(location)
         }
+    }
+
+    private fun alertNearbyCommunity(location: android.location.Location, victimName: String, locationUrl: String) {
+        val lat = location.latitude
+        val lng = location.longitude
+        val radiusInDegrees = 0.09 // Roughly 10km
+
+        // Simplified query to avoid requiring complex Firestore Indexes
+        db.collection("users")
+            .whereEqualTo("isCommunityMember", true)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                var count = 0
+                for (doc in querySnapshot) {
+                    if (doc.id == auth.currentUser?.uid) continue // Don't alert yourself
+
+                    val heroLat = doc.getDouble("lastLat") ?: 0.0
+                    val heroLng = doc.getDouble("lastLng") ?: 0.0
+
+                    // Manual distance check (approximate bounding box)
+                    if (heroLat >= lat - radiusInDegrees && heroLat <= lat + radiusInDegrees &&
+                        heroLng >= lng - radiusInDegrees && heroLng <= lng + radiusInDegrees) {
+                        
+                        createAppAlert(doc.id, "COMMUNITY SOS: $victimName", locationUrl)
+                        count++
+                    }
+                }
+                if (isAdded) {
+                    if (count > 0) {
+                        Toast.makeText(requireContext(), "Alerted $count nearby community heroes!", Toast.LENGTH_SHORT).show()
+                    } else {
+                        android.util.Log.d("SOSDialog", "No community heroes found within 10km")
+                    }
+                }
+            }
     }
 
     private fun sendAlertsToGuardians(locationUrl: String) {

@@ -97,7 +97,16 @@ class ProfileFragment : Fragment() {
                 user?.let {
                     binding.guardianCount.text = it.guardianCount.toString()
                     binding.reportCount.text = it.reportCount.toString()
-                    binding.guardianModeToggleProfile.isChecked = it.isGuardianMode
+                    
+                    // Temporarily remove listeners to prevent infinite loops when updating UI from Firestore
+                    binding.communityModeToggle.setOnCheckedChangeListener(null)
+                    
+                    binding.communityModeToggle.isChecked = it.isCommunityMember
+                    
+                    // Restore listeners
+                    binding.communityModeToggle.setOnCheckedChangeListener { _, isChecked ->
+                        updateCommunityMode(isChecked)
+                    }
                 }
             }
         }
@@ -105,12 +114,10 @@ class ProfileFragment : Fragment() {
 
 
     private fun setupListeners() {
+        // Listeners are now initialized/restored in fetchUserStats to avoid infinite loops
+        
         binding.rowPhone.setOnClickListener {
             showPhoneInputDialog()
-        }
-
-        binding.guardianModeToggleProfile.setOnCheckedChangeListener { _, isChecked ->
-            updateGuardianMode(isChecked)
         }
 
         binding.rowGuardians.setOnClickListener {
@@ -129,14 +136,29 @@ class ProfileFragment : Fragment() {
     }
 
 
-    private fun updateGuardianMode(enabled: Boolean) {
+    private fun updateCommunityMode(enabled: Boolean) {
         val uid = auth.currentUser?.uid ?: return
-        db.collection("users").document(uid).update("isGuardianMode", enabled)
-            .addOnFailureListener {
-                if (_binding != null) {
-                    Toast.makeText(requireContext(), "Failed to update Guardian Mode", Toast.LENGTH_SHORT).show()
+        
+        val updates = mutableMapOf<String, Any>(
+            "isCommunityMember" to enabled
+        )
+
+        if (enabled) {
+            val fusedLocationClient = com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(requireActivity())
+            if (androidx.core.app.ActivityCompat.checkSelfPermission(requireContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    location?.let {
+                        updates["lastLat"] = it.latitude
+                        updates["lastLng"] = it.longitude
+                    }
+                    db.collection("users").document(uid).update(updates)
                 }
+            } else {
+                db.collection("users").document(uid).update(updates)
             }
+        } else {
+            db.collection("users").document(uid).update(updates)
+        }
     }
 
 

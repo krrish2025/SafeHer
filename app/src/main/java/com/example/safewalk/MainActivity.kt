@@ -29,6 +29,25 @@ class MainActivity : AppCompatActivity() {
 
         checkNotificationPermission()
         listenForEmergencyAlerts()
+        updateHeroLocation()
+    }
+
+    private fun updateHeroLocation() {
+        val uid = Firebase.auth.currentUser?.uid ?: return
+        val db = Firebase.firestore
+        val fusedLocationClient = com.google.android.gms.location.LocationServices.getFusedLocationProviderClient(this)
+
+        if (androidx.core.app.ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                location?.let {
+                    val updates = mapOf(
+                        "lastLat" to it.latitude,
+                        "lastLng" to it.longitude
+                    )
+                    db.collection("users").document(uid).update(updates)
+                }
+            }
+        }
     }
 
     private fun checkNotificationPermission() {
