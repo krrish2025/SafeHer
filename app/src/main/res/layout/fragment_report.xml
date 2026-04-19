@@ -19,6 +19,7 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingTop="20sp"
             android:layout_marginBottom="20dp">
 
             <TextView
@@ -50,20 +51,86 @@
             android:textSize="12sp"
             android:layout_marginBottom="8dp" />
 
-        <GridLayout
-            android:id="@+id/categoryGrid"
+        <RadioGroup
+            android:id="@+id/categoryGroup"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:columnCount="3"
-            android:rowOrderPreserved="false">
+            android:orientation="vertical">
 
-            <TextView style="@style/ReportChip" android:layout_columnWeight="1" android:layout_width="0dp" android:text="Harassment"/>
-            <TextView style="@style/ReportChip" android:layout_columnWeight="1" android:layout_width="0dp" android:text="Assault"/>
-            <TextView style="@style/ReportChip" android:layout_columnWeight="1" android:layout_width="0dp" android:text="Lighting"/>
-            <TextView style="@style/ReportChip" android:layout_columnWeight="1" android:layout_width="0dp" android:text="Traffic"/>
-            <TextView style="@style/ReportChip" android:layout_columnWeight="1" android:layout_width="0dp" android:text="Crowd"/>
-            <TextView style="@style/ReportChip" android:layout_columnWeight="1" android:layout_width="0dp" android:text="Other"/>
-        </GridLayout>
+            <GridLayout
+                android:id="@+id/categoryGrid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="2"
+                android:useDefaultMargins="true">
+
+                <RadioButton
+                    android:id="@+id/btnHarassment"
+                    style="@style/Widget.Material3.CompoundButton.RadioButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:background="@drawable/bg_panel_rounded"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:text="Harassment"
+                    android:textColor="@color/text" />
+
+                <RadioButton
+                    android:id="@+id/btnStalking"
+                    style="@style/Widget.Material3.CompoundButton.RadioButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:background="@drawable/bg_panel_rounded"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:text="Stalking"
+                    android:textColor="@color/text" />
+
+                <RadioButton
+                    android:id="@+id/btnSuspicious"
+                    style="@style/Widget.Material3.CompoundButton.RadioButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:background="@drawable/bg_panel_rounded"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:text="Suspicious"
+                    android:textColor="@color/text" />
+
+                <RadioButton
+                    android:id="@+id/btnOther"
+                    style="@style/Widget.Material3.CompoundButton.RadioButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_columnWeight="1"
+                    android:background="@drawable/bg_panel_rounded"
+                    android:button="@null"
+                    android:gravity="center"
+                    android:padding="12dp"
+                    android:text="Other"
+                    android:textColor="@color/text" />
+            </GridLayout>
+        </RadioGroup>
+
+        <!-- OTHER INPUT -->
+        <EditText
+            android:id="@+id/otherCategoryInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_panel_rounded"
+            android:hint="Enter the issue"
+            android:padding="12dp"
+            android:visibility="gone"
+            android:textColor="@color/text"
+            android:textColorHint="@color/sub"
+            android:textSize="14sp" />
 
         <!-- DESCRIPTION -->
         <TextView
@@ -103,7 +170,15 @@
             android:layout_height="100dp"
             android:background="@drawable/bg_dashed_border">
 
+            <ImageView
+                android:id="@+id/evidenceImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:visibility="gone" />
+
             <TextView
+                android:id="@+id/uploadPlaceholder"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -113,18 +188,29 @@
         </FrameLayout>
 
         <!-- LOCATION -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Location"
+            android:textColor="@color/sub"
+            android:textSize="12sp"
+            android:layout_marginTop="20dp"
+            android:layout_marginBottom="8dp" />
+
         <LinearLayout
+            android:id="@+id/locationPicker"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
             android:background="@drawable/bg_safe_glow_rounded"
+            android:clickable="true"
+            android:focusable="true"
             android:padding="12dp">
 
             <TextView
                 android:id="@+id/locationText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Detecting your location..."
+                android:text="Select location of the incident"
                 android:textColor="@color/safe"
                 android:textSize="13sp" />
         </LinearLayout>
