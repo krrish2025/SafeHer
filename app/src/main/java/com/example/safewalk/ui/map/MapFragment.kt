@@ -15,6 +15,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
+import com.example.safewalk.BuildConfig
 import com.example.safewalk.R
 import com.example.safewalk.databinding.FragmentMapBinding
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -245,16 +246,8 @@ class MapFragment : Fragment() {
                 }
                 val destPoint = GeoPoint(destAddrs[0].latitude, destAddrs[0].longitude)
 
-                // OSRM with alternatives
-                val roadManager = OSRMRoadManager(requireContext(), "SafeWalk/1.0")
-                roadManager.setMean(OSRMRoadManager.MEAN_BY_FOOT)
-                roadManager.addRequestOption("alternatives=3")
-
-                val waypoints = ArrayList<GeoPoint>()
-                waypoints.add(startPoint)
-                waypoints.add(destPoint)
-
-                val roads = roadManager.getRoads(waypoints)
+                // Use MapBox Directions API
+                val roads = fetchMapBoxRoutes(startPoint, destPoint)
 
                 activity?.runOnUiThread {
                     if (_binding == null) return@runOnUiThread
@@ -268,6 +261,49 @@ class MapFragment : Fragment() {
                     resetButton()
                 }
             }
+        }
+    }
+
+    private fun fetchMapBoxRoutes(start: GeoPoint, dest: GeoPoint): Array<Road> {
+        return try {
+            val apiKey = BuildConfig.MAPBOX_ACCESS_TOKEN
+            val urlStr = "https://api.mapbox.com/directions/v5/mapbox/walking/${start.longitude},${start.latitude};${dest.longitude},${dest.latitude}?alternatives=true&geometries=geojson&access_token=$apiKey"
+            
+            val url = java.net.URL(urlStr)
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.requestMethod = "GET"
+            
+            val response = connection.inputStream.bufferedReader().use { it.readText() }
+            val json = org.json.JSONObject(response)
+            
+            val routesArray = json.optJSONArray("routes") ?: return emptyArray()
+            val roads = ArrayList<Road>()
+            
+            for (i in 0 until routesArray.length()) {
+                val routeObj = routesArray.getJSONObject(i)
+                val distance = routeObj.optDouble("distance", 0.0)
+                val geometry = routeObj.getJSONObject("geometry")
+                val coords = geometry.getJSONArray("coordinates")
+                
+                val road = Road()
+                // Convert MapBox meters to KM
+                road.mLength = distance / 1000.0
+                road.mStatus = Road.STATUS_OK
+                
+                val points = ArrayList<GeoPoint>()
+                for (j in 0 until coords.length()) {
+                    val pt = coords.getJSONArray(j)
+                    // MapBox returns [longitude, latitude]
+                    points.add(GeoPoint(pt.getDouble(1), pt.getDouble(0)))
+                }
+                road.mRouteHigh = points
+                
+                roads.add(road)
+            }
+            roads.toTypedArray()
+        } catch (e: Exception) {
+            android.util.Log.e("MapFragment", "MapBox API Error", e)
+            emptyArray()
         }
     }
 
@@ -430,6 +466,9 @@ class MapFragment : Fragment() {
                     overlay.outlinePaint.strokeWidth = 16f
                     val emoji = when { riskScore <= 35 -> "🟢"; riskScore <= 60 -> "🟡"; else -> "🔴" }
                     routeInfoTexts[routeIdx] = "$emoji ${routeInfoTexts[routeIdx]}"
+                    
+                    // Auto-select the only route
+                    if (selectedRouteIndex == -1) selectRoute(routeIdx)
                 }
                 rank == 0 -> {
                     // Lowest risk = Safest route
