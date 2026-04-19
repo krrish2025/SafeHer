@@ -1,7 +1,9 @@
 package com.example.safewalk.ui.dialogs
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.telephony.SmsManager
 import android.view.LayoutInflater
@@ -54,6 +56,12 @@ class SOSDialog : DialogFragment() {
 
         binding.cancelButton.setOnClickListener {
             dismiss()
+        }
+
+        binding.callPoliceButton.setOnClickListener {
+            val intent = Intent(Intent.ACTION_DIAL)
+            intent.data = Uri.parse("tel:100")
+            startActivity(intent)
         }
     }
 
